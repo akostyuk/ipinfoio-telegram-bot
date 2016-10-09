@@ -1,1 +1,1 @@
-web: python ipinfoio_bot.py
+worker: python ipinfoio_bot.py
