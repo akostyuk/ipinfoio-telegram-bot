@@ -18,6 +18,10 @@ API_TOKEN = os.environ.get('IPINFOIO_TELEGRAM_API_TOKEN', None)
 if API_TOKEN:
     CONFIG['api_token'] = API_TOKEN
 
+BOTAN_TOKEN = os.environ.get('BOTAN_TOKEN', None)
+if BOTAN_TOKEN:
+    CONFIG['botan_token'] = BOTAN_TOKEN
+
 DEBUG = CONFIG.pop('debug', False)
 
 logger = logging.getLogger(__name__)
@@ -101,6 +105,16 @@ class IPInfoIOBot(Bot):
             logger.info('Shutting down bot...')
         loop.close()
 
+    async def track_message(self, message, name):
+        uid = message.get('result', {}).get('chat', {}).get('id', None)
+        if self.botan_token:
+            logger.debug(
+                'Tracking message: "{}", from user: {}'.format(name, uid))
+            if uid:
+                self.track({'from': {'id': uid}}, name)
+            else:
+                logger.debug('Can not get user id')
+
     async def ping(self, chat, match):
         '''Send a "pong" reply on "/ping" command
         '''
@@ -121,7 +135,8 @@ class IPInfoIOBot(Bot):
     async def help(self, chat, match):
         logger.debug('Got /help command, sending help text')
         message = {'text': GREETING, 'parse_mode': 'Markdown'}
-        await chat._send_to_chat('sendMessage', **message)
+        response = await chat._send_to_chat('sendMessage', **message)
+        await self.track_message(response, 'Help')
 
     @check_ip
     async def ip_base(self, chat, match, **kwargs):
@@ -133,7 +148,8 @@ class IPInfoIOBot(Bot):
                 data[v] = ''
         reply = BASE_TEMPLATE.format(**data)
         message = {'text': reply, 'parse_mode': 'Markdown'}
-        await chat._send_to_chat('sendMessage', **message)
+        response = await chat._send_to_chat('sendMessage', **message)
+        await self.track_message(response, 'Ip')
 
     @check_ip
     async def ip_geo(self, chat, match, **kwargs):
@@ -151,7 +167,8 @@ class IPInfoIOBot(Bot):
                 'text': 'Sorry, location is unknown for this address'
             }
             method = 'sendMessage'
-        await chat._send_to_chat(method, **message)
+        response = await chat._send_to_chat(method, **message)
+        await self.track_message(response, 'Ip_Geo')
 
 
 if __name__ == '__main__':
