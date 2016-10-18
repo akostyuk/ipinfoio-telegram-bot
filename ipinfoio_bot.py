@@ -14,13 +14,17 @@ from aiotg import Bot
 with open('config.json') as cfg:
     CONFIG = json.load(cfg)
 
-API_TOKEN = os.environ.get('IPINFOIO_TELEGRAM_API_TOKEN', None)
-if API_TOKEN:
-    CONFIG['api_token'] = API_TOKEN
+VARS = (
+    {'IPINFOIO_TELEGRAM_API_TOKEN': 'api_token'},
+    {'BOTAN_TOKEN': 'botan_token'}
+)
 
-BOTAN_TOKEN = os.environ.get('BOTAN_TOKEN', None)
-if BOTAN_TOKEN:
-    CONFIG['botan_token'] = BOTAN_TOKEN
+# Load env variables into the CONFIG
+for var in VARS:
+    for k, v in var.items():
+        conf_var = os.environ.get(k, None)
+        if conf_var:
+            CONFIG[v] = conf_var
 
 DEBUG = CONFIG.pop('debug', False)
 
